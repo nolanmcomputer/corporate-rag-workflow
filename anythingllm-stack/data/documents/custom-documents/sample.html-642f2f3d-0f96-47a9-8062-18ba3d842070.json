@@ -1,0 +1,13 @@
+{
+    "id": "642f2f3d-0f96-47a9-8062-18ba3d842070",
+    "url": "file:///app/collector/hotdir/sample.html",
+    "title": "sample.html",
+    "docAuthor": "Unknown",
+    "description": "Unknown",
+    "docSource": "a text file uploaded by the user.",
+    "chunkSource": "",
+    "published": "8/26/2026, 3:32:06 PM",
+    "wordCount": 22,
+    "pageContent": "<!DOCTYPE html>\n<html>\n<head>\n <title>Project Bingo<title>\n</head>\n <body>\n  <h1>Project Bingo</h1>\n  <p>Project Bingo begins on September 2.</p>\n  <p>Project Manager: Bob Doe</p>\n </body>\n</html>\n \n",
+    "token_count_estimate": 65
+}

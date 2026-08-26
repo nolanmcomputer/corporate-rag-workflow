@@ -1,0 +1,43 @@
+services:
+  anythingllm:
+    image: mintplexlabs/anythingllm:latest
+
+    ports:
+      - "${ANYTHINGLLM_PORT}:3001"
+
+    cap_add:
+      - SYS_ADMIN
+
+    environment:
+      STORAGE_DIR: /app/server/storage
+
+      LLM_PROVIDER: ${LLM_PROVIDER}
+      GENERIC_OPEN_AI_BASE_PATH: ${GENERIC_OPEN_AI_BASE_PATH}
+      GENERIC_OPEN_AI_MODEL_PREF: ${GENERIC_OPEN_AI_MODEL_PREF}
+      GENERIC_OPEN_AI_MODEL_TOKEN_LIMIT: ${GENERIC_OPEN_AI_MODEL_TOKEN_LIMIT}
+      GENERIC_OPEN_AI_API_KEY: ${GENERIC_OPEN_AI_API_KEY}
+
+      EMBEDDING_ENGINE: ${EMBEDDING_ENGINE}
+      EMBEDDING_MODEL_PREF: ${EMBEDDING_MODEL_PREF}
+
+      VECTOR_DB: ${VECTOR_DB}
+
+      SIG_KEY: ${SIG_KEY}
+      SIG_SALT: ${SIG_SALT}
+
+    volumes:
+      - ./data:/app/server/storage
+      - "${VAULT_HOST_PATH}:/vault/corporate:ro"
+
+    networks:
+      - shared
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    restart: unless-stopped
+
+networks:
+  shared:
+    external: true
+    name: ${SHARED_NETWORK_NAME}

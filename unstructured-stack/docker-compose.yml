@@ -1,0 +1,19 @@
+services:
+  unstructured:
+    image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
+    
+    ports:
+      - "${UNSTRUCTURED_PORT}:8000"
+
+    volumes:
+      - "${VAULT_HOST_PATH}:/vault/corporate"
+
+    networks:
+      - shared
+
+    restart: unless-stopped
+
+networks:
+  shared:
+    external: true
+    name: ${SHARED_NETWORK_NAME}

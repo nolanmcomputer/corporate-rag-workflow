@@ -682,7 +682,7 @@ docker compose ps
 
 AnythingLLM should report healthy.
 
-Shared network
+**Shared network**
 
 ```
 docker network inspect "${SHARED_NETWORK_NAME}" \
@@ -691,7 +691,7 @@ docker network inspect "${SHARED_NETWORK_NAME}" \
 
 Both containers should be present.
 
-Unstructured API
+**Unstructured API**
 
 ```
 curl -i http://localhost:8001/general/v0/general
@@ -701,7 +701,7 @@ Expected GET response:
 
 `405 Method Not Allowed`
 
-Inter-container connectivity
+**Inter-container connectivity**
 
 From AnythingLLM:
 
@@ -714,7 +714,7 @@ docker compose exec anythingllm \
   curl -i http://unstructured:8000/general/v0/general
 ```
 
-Vault isolation
+**Vault isolation**
 
 Unstructured should be able to write beneath /vault/corporate.
 
@@ -730,7 +730,7 @@ with:
 Read-only file system
 ```
 
-Generation / embedding separation
+**Generation / embedding separation**
 
 ```
 docker compose exec anythingllm env | \
@@ -753,67 +753,39 @@ VECTOR_DB=lancedb
 
 The following were verified during implementation:
 
+```
 Two independent Docker Compose stacks
-
 Both start with docker compose up -d
-
 External shared Docker network
-
 Network name supplied through environment configuration
-
 Host corporate path supplied through environment configuration
-
 Neither stack mounts the parent /vault directory
-
 Unstructured receives read/write access to /vault/corporate
-
 AnythingLLM receives read-only access to /vault/corporate
-
 AnythingLLM persistent storage survives container recreation
-
 PDF preprocessing
-
 DOCX preprocessing
-
 PPTX preprocessing
-
 HTML parser behavior tested and documented
-
 Repeatable raw -> processed preprocessing command
-
 Explicit title-aware chunking policy
-
 Maximum chunk size verified
-
 Source metadata retained
-
 Original contributing elements retained
-
 Existing OpenAI-compatible generation endpoint parameterized
-
 Generation model name externalized
-
 API credential externalized
-
 Signing secrets externalized
-
 CPU-native embedding model configured separately from generation
-
 LanceDB vector persistence
-
 Persistent AnythingLLM workspace
-
 Developer API authentication
-
 Semantic retrieval verified without generation model
-
 Inter-container DNS / shared-network communication
-
 Full stop/start deployment rehearsal
-
 Direct-ingestion test table finalized with recorded results
-
 Arbitrary HTML file-input fallback, if required beyond the tested structured HTML path
+```
 
 ## Security Notes
 

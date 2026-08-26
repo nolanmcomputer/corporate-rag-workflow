@@ -1,8 +1,9 @@
-## Self-Hosted Corporate Knowledge Base##
+## Self-Hosted Corporate Knowledge Base
 
 This project deploys two independent Docker Compose stacks for a self-hosted corporate RAG workflow:
 
 **Unstructured** for document partitioning, normalization, metadata preservation, and chunking.
+
 **AnythingLLM** for document ingestion, CPU-based embeddings, vector storage/retrieval, workspace management, and integration with the existing OpenAI-compatible generation endpoint.
 
 Both stacks attach to an existing external Docker network and are scoped to the corporate subtree of the host knowledge vault.
@@ -26,21 +27,21 @@ for each stack independently.
                        /       \
                       /         \
           Native CPU embedder   Workspace/API
-          all-MiniLM-L6-v2          │
+          all-MiniLM-L6-v2           │
                   │                  │
                   ▼                  │
-               LanceDB              │
+               LanceDB               │
                   ▲                  │
                   │                  │
-         /vault/corporate (RO)      │
+         /vault/corporate (RO)       │
                   ▲                  │
                   │                  │
-         /vault/corporate (RW)      │
+         /vault/corporate (RW)       │
                   │                  │
-             Unstructured           │
+             Unstructured            │
                   ▲                  │
                   │                  │
-         raw/ → processed/          │
+         raw/ → processed/           │
                   │                  │
                   └────────┬─────────┘
                            │
@@ -50,43 +51,55 @@ for each stack independently.
 
 **The generative model and embedding model are intentionally separate.**
 
-The existing GPU-backed OpenAI-compatible model is used only for completion/generation. AnythingLLM uses its native lightweight MiniLM embedding model on CPU so embedding workloads do not consume GPU memory intended for the supplied large model.
+The existing GPU-backed OpenAI-compatible model is used *only* for completion/generation. AnythingLLM uses its native lightweight MiniLM embedding model on CPU so embedding workloads do not consume GPU memory intended for the supplied large model.
 
 ## Target Environment Assumptions
 
 The deployment assumes the environment specified in the assessment already provides:
 
-Windows 11 with WSL2 and Docker Desktop
-An existing external Docker network
-An existing OpenAI-compatible generation service at:
+- Windows 11 with WSL2 and Docker Desktop
 
-**http://host.docker.internal:8000/v1**
+- An existing external Docker network
+
+- An existing OpenAI-compatible generation service at: **http://host.docker.internal:8000/v1**
 
 An existing host knowledge vault containing:
 /vault/
+
 ├── corporate/
+
 ├── shared/
+
 ├── tickets/
+
 ├── learning/
+
 └── skills/
 
-Only the corporate subtree is made available to these stacks.
+Only the *corporate* subtree is made available to these stacks.
 
-The supplied generation service was not present in my local development environment, so local verification covered configuration and connectivity up to that external dependency. Embedding and semantic retrieval were tested independently and successfully without the generation endpoint.
+The supplied generation service was not present in the local development environment, so local verification covered configuration and connectivity up to that external dependency. Embedding and semantic retrieval were tested independently and successfully without the generation endpoint.
 
 ## Repository / Deployment Layout
 
 The two stacks are independent:
 
 ~/unstructured-stack/
+
 ├── docker-compose.yml
+
 ├── .env.example
+
 ├── preprocess.sh
+
 └── data/
 
 ~/anythingllm-stack/
+
 ├── docker-compose.yml
+
 ├── .env.example
+
 └── data/
 
 **Local .env files are intentionally excluded from source control.**
@@ -94,7 +107,9 @@ The two stacks are independent:
 The host corporate vault uses:
 
 /vault/corporate/
+
 ├── raw/
+
 └── processed/
 
 In the local assessment environment the actual host path is supplied through VAULT_HOST_PATH; neither Compose file hardcodes the host vault location.
@@ -105,41 +120,47 @@ Both stacks attach to the same pre-existing external Docker network.
 
 For local testing I created:
 
-docker network create situate-ai
+> docker network create situate-ai
 
 The actual network name is supplied through:
 
-SHARED_NETWORK_NAME
+> SHARED_NETWORK_NAME
 
 and the Compose files use:
 
 networks:
+
   shared:
+  
     external: true
+    
     name: ${SHARED_NETWORK_NAME}
 
 Neither stack owns or creates the network.
 
-Verification:
+### Verification:
 
-docker network inspect "${SHARED_NETWORK_NAME}"
+> docker network inspect "${SHARED_NETWORK_NAME}"
 
 Both unstructured and anythingllm should appear under Containers.
 
 Container-to-container DNS was also verified from AnythingLLM:
 
-docker compose exec anythingllm getent hosts unstructured
+> docker compose exec anythingllm getent hosts unstructured
 
 and the Unstructured API was reachable over the shared network.
 
 ## Unstructured Stack
+
 Configuration
 
 Example .env.example:
 
-VAULT_HOST_PATH=/absolute/path/to/vault/corporate
-UNSTRUCTURED_PORT=8001
-SHARED_NETWORK_NAME=existing-network-name
+> VAULT_HOST_PATH=/absolute/path/to/vault/corporate
+
+> UNSTRUCTURED_PORT=8001
+
+> SHARED_NETWORK_NAME=existing-network-name
 
 The corporate subtree is mounted read/write:
 
@@ -150,26 +171,33 @@ The parent /vault directory is never mounted.
 
 This prevents the container from accessing:
 
-/vault/shared
-/vault/tickets
-/vault/learning
-/vault/skills
-Deployment
-cd ~/unstructured-stack
-cp .env.example .env
+- /vault/shared
+
+- /vault/tickets
+
+- /vault/learning
+
+- /vault/skills
+
+### Deployment
+
+> cd ~/unstructured-stack
+> cp .env.example .env
+
 **Edit .env for the target host.**
 
-docker compose up -d
-docker compose ps
+> docker compose up -d
+> docker compose ps
 
 API reachability can be checked with:
 
-curl -i http://localhost:8001/general/v0/general
+> curl -i http://localhost:8001/general/v0/general
 
 A GET request should return:
 
-405 Method Not Allowed
-Only POST requests are supported.
+> 405 Method Not Allowed
+
+> Only POST requests are supported.
 
 This confirms that the partition endpoint is reachable.
 
@@ -177,55 +205,71 @@ This confirms that the partition endpoint is reachable.
 
 Raw source documents are placed in:
 
-/vault/corporate/raw/
+> /vault/corporate/raw/
 
 Processed output is written to:
 
-/vault/corporate/processed/
+> /vault/corporate/processed/
 
 A repeatable preprocessing command is provided:
 
-cd ~/unstructured-stack
-./preprocess.sh <filename>
+> cd ~/unstructured-stack
+
+> ./preprocess.sh <filename>
 
 Example:
 
-./preprocess.sh project-bingo-large.pdf
+> ./preprocess.sh larger-test.pdf
 
 Input:
 
-/vault/corporate/raw/project-bingo-large.pdf
+/vault/corporate/raw/larger-test.pdf
 
 Output:
 
-/vault/corporate/processed/project-bingo-large.chunks.json
+/vault/corporate/processed/larger-test.chunks.json
 
-The script:
+### The script:
 
-Loads deployment configuration from .env.
-Validates that the requested source file exists inside the corporate raw directory.
-Sends the document to the local Unstructured API.
-Applies the configured chunking policy.
-Validates that the response is a non-empty JSON array.
-Writes to a temporary file first.
-Atomically moves the successful result into processed/.
-Prints a summary of generated chunks.
+- Loads deployment configuration from .env.
 
-The script never recursively scans /vault and never receives a path outside the configured corporate subtree.
+- Validates that the requested source file exists inside the corporate raw directory.
+
+- Sends the document to the local Unstructured API.
+
+- Applies the configured chunking policy.
+
+- Validates that the response is a non-empty JSON array.
+
+- Writes to a temporary file first.
+
+- Atomically moves the successful result into processed/.
+
+- Prints a summary of generated chunks.
+
+The script *never* recursively scans /vault and *never* receives a path outside the configured corporate subtree.
 
 ## Chunking Strategy
 
 The preprocessing pipeline uses title-aware chunking:
 
-chunking_strategy=by_title
-max_characters=1200
-new_after_n_chars=900
-combine_under_n_chars=250
-overlap=100
-overlap_all=false
-multipage_sections=false
-include_orig_elements=true
-Rationale
+- chunking_strategy=by_title
+
+- max_characters=1200
+
+- new_after_n_chars=900
+
+- combine_under_n_chars=250
+
+- overlap=100
+
+- overlap_all=false
+
+- multipage_sections=false
+
+- include_orig_elements=true
+
+### Rationale
 
 by_title was selected to prefer detected semantic/section boundaries over arbitrary fixed-length splitting.
 
@@ -237,36 +281,37 @@ Overlap is limited to 100 characters and is not applied to every chunk. This avo
 
 include_orig_elements=true preserves the original Unstructured elements that contributed to each combined chunk.
 
-Verification
+### Verification
 
 A multi-section Project Bingo PDF of several thousand characters was used to verify that the policy produces multiple chunks rather than a single document element.
 
 Chunk count:
 
-jq 'length' \
-  "${VAULT_HOST_PATH}/processed/project-bingo-large.chunks.json"
+> jq 'length' \
+>  "${VAULT_HOST_PATH}/processed/project-bingo-large.chunks.json"
 
 Maximum generated chunk size:
 
-jq '[.[].text | length] | max' \
-  "${VAULT_HOST_PATH}/processed/project-bingo-large.chunks.json"
+> jq '[.[].text | length] | max' \
+>  "${VAULT_HOST_PATH}/processed/project-bingo-large.chunks.json"
 
 The maximum was verified not to exceed the configured 1,200-character hard limit.
 
 Metadata can be inspected with:
 
-jq -r '
-  .[] |
-  [
-    .type,
-    (.metadata.filename // "n/a"),
-    (.metadata.page_number // "n/a"),
-    (.metadata.filetype // "n/a"),
-    (.text | length)
-  ] |
-  @tsv
-' "${VAULT_HOST_PATH}/processed/project-bingo-large.chunks.json"
-5. Metadata / Provenance
+> jq -r '
+>  .[] |
+>  [
+>    .type,
+>    (.metadata.filename // "n/a"),
+>    (.metadata.page_number // "n/a"),
+>    (.metadata.filetype // "n/a"),
+>    (.text | length)
+>  ] |
+>  @tsv
+>' "${VAULT_HOST_PATH}/processed/project-bingo-large.chunks.json"
+
+## Metadata / Provenance
 
 Processed elements retain provenance where available, including:
 

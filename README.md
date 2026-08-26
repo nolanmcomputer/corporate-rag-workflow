@@ -10,7 +10,7 @@ Both stacks attach to an existing external Docker network and are scoped to the 
 
 The implementation is intended to be dropped into the supplied target environment and started with:
 
-docker compose up -d
+`docker compose up -d`
 
 for each stack independently.
 
@@ -64,17 +64,15 @@ The deployment assumes the environment specified in the assessment already provi
 - An existing OpenAI-compatible generation service at: **http://host.docker.internal:8000/v1**
 
 An existing host knowledge vault containing:
+
+```
 /vault/
-
 ├── corporate/
-
 ├── shared/
-
 ├── tickets/
-
 ├── learning/
-
 └── skills/
+```
 
 Only the *corporate* subtree is made available to these stacks.
 
@@ -84,33 +82,30 @@ The supplied generation service was not present in the local development environ
 
 The two stacks are independent:
 
+```
 ~/unstructured-stack/
-
 ├── docker-compose.yml
-
 ├── .env.example
-
 ├── preprocess.sh
-
 └── data/
+```
 
+```
 ~/anythingllm-stack/
-
 ├── docker-compose.yml
-
 ├── .env.example
-
 └── data/
+```
 
 **Local .env files are intentionally excluded from source control.**
 
 The host corporate vault uses:
 
+```
 /vault/corporate/
-
 ├── raw/
-
 └── processed/
+```
 
 In the local assessment environment the actual host path is supplied through VAULT_HOST_PATH; neither Compose file hardcodes the host vault location.
 
@@ -120,33 +115,35 @@ Both stacks attach to the same pre-existing external Docker network.
 
 For local testing I created:
 
-> docker network create situate-ai
+`docker network create situate-ai`
 
-The actual network name is supplied through:
+The *actual* network name is supplied through:
 
-> SHARED_NETWORK_NAME
+`SHARED_NETWORK_NAME`
 
 and the Compose files use:
 
+```
 networks:
 
-  shared:
+ shared:
   
-    external: true
+  external: true
     
-    name: ${SHARED_NETWORK_NAME}
+  name: ${SHARED_NETWORK_NAME}
+```
 
 Neither stack owns or creates the network.
 
 ### Verification:
 
-> docker network inspect "${SHARED_NETWORK_NAME}"
+`docker network inspect "${SHARED_NETWORK_NAME}"`
 
-Both unstructured and anythingllm should appear under Containers.
+Both **unstructured** and **anythingllm** should appear under Containers.
 
 Container-to-container DNS was also verified from AnythingLLM:
 
-> docker compose exec anythingllm getent hosts unstructured
+`docker compose exec anythingllm getent hosts unstructured`
 
 and the Unstructured API was reachable over the shared network.
 
@@ -156,11 +153,11 @@ Configuration
 
 Example .env.example:
 
-> VAULT_HOST_PATH=/absolute/path/to/vault/corporate
-
-> UNSTRUCTURED_PORT=8001
-
-> SHARED_NETWORK_NAME=existing-network-name
+```
+VAULT_HOST_PATH=/absolute/path/to/vault/corporate
+UNSTRUCTURED_PORT=8001
+SHARED_NETWORK_NAME=existing-network-name
+```
 
 The corporate subtree is mounted read/write:
 
@@ -171,33 +168,34 @@ The parent /vault directory is never mounted.
 
 This prevents the container from accessing:
 
-- /vault/shared
-
-- /vault/tickets
-
-- /vault/learning
-
-- /vault/skills
+```
+/vault/shared
+/vault/tickets
+/vault/learning
+/vault/skills
+```
 
 ### Deployment
 
-> cd ~/unstructured-stack
-> cp .env.example .env
+```
+cd ~/unstructured-stack
+cp .env.example .env
+```
 
 **Edit .env for the target host.**
 
-> docker compose up -d
-> docker compose ps
+```
+docker compose up -d
+docker compose ps
+```
 
 API reachability can be checked with:
 
-> curl -i http://localhost:8001/general/v0/general
+`curl -i http://localhost:8001/general/v0/general`
 
 A GET request should return:
 
-> 405 Method Not Allowed
-
-> Only POST requests are supported.
+`405 Method Not Allowed: Only POST requests are supported.`
 
 This confirms that the partition endpoint is reachable.
 
@@ -205,29 +203,29 @@ This confirms that the partition endpoint is reachable.
 
 Raw source documents are placed in:
 
-> /vault/corporate/raw/
+`/vault/corporate/raw/`
 
 Processed output is written to:
 
-> /vault/corporate/processed/
+`/vault/corporate/processed/`
 
 A repeatable preprocessing command is provided:
 
-> cd ~/unstructured-stack
+`cd ~/unstructured-stack`
 
-> ./preprocess.sh <filename>
+`./preprocess.sh <filename>`
 
 Example:
 
-> ./preprocess.sh larger-test.pdf
+`./preprocess.sh larger-test.pdf`
 
 Input:
 
-/vault/corporate/raw/larger-test.pdf
+`/vault/corporate/raw/larger-test.pdf`
 
 Output:
 
-/vault/corporate/processed/larger-test.chunks.json
+`/vault/corporate/processed/larger-test.chunks.json`
 
 ### The script:
 
@@ -271,7 +269,7 @@ The preprocessing pipeline uses title-aware chunking:
 
 ### Rationale
 
-by_title was selected to prefer detected semantic/section boundaries over arbitrary fixed-length splitting.
+`by_title` was selected to prefer detected semantic/section boundaries over arbitrary fixed-length splitting.
 
 A hard maximum of 1,200 characters prevents excessively large retrieval units, while the 900-character soft boundary encourages chunks to close before reaching that limit.
 
@@ -279,7 +277,7 @@ Small sections below 250 characters may be combined to avoid producing unnecessa
 
 Overlap is limited to 100 characters and is not applied to every chunk. This avoids unnecessary duplication while still providing continuity where oversized elements must be split.
 
-include_orig_elements=true preserves the original Unstructured elements that contributed to each combined chunk.
+`include_orig_elements=true` preserves the original Unstructured elements that contributed to each combined chunk.
 
 ### Verification
 
@@ -288,12 +286,12 @@ A multi-section Project Bingo PDF of several thousand characters was used to ver
 Chunk count:
 
 > jq 'length' \
->  "${VAULT_HOST_PATH}/processed/project-bingo-large.chunks.json"
+>  "${VAULT_HOST_PATH}/processed/larger-test.chunks.json"
 
 Maximum generated chunk size:
 
 > jq '[.[].text | length] | max' \
->  "${VAULT_HOST_PATH}/processed/project-bingo-large.chunks.json"
+>  "${VAULT_HOST_PATH}/processed/larger-test.chunks.json"
 
 The maximum was verified not to exceed the configured 1,200-character hard limit.
 
@@ -309,7 +307,7 @@ Metadata can be inspected with:
 >    (.text | length)
 >  ] |
 >  @tsv
->' "${VAULT_HOST_PATH}/processed/project-bingo-large.chunks.json"
+>' "${VAULT_HOST_PATH}/processed/larger-test.chunks.json"
 
 ## Metadata / Provenance
 
@@ -323,6 +321,7 @@ original contributing elements
 
 Example structure:
 
+```
 {
   "type": "CompositeElement",
   "text": "Project Bingo begins on September 2...",
@@ -333,21 +332,24 @@ Example structure:
     "orig_elements": "..."
   }
 }
+```
 
-orig_elements is retained so metadata from the source partition elements remains recoverable even after multiple elements have been combined into a RAG chunk.
+`orig_elements` is retained so metadata from the source partition elements remains recoverable even after multiple elements have been combined into a RAG chunk.
 
 ## Preprocessing Format Tests
 
 The Unstructured stack was exercised against:
 
+```
 PDF
 DOCX
 PPTX
 HTML
+```
 
 PDF, DOCX, and PPTX successfully produced structured element output with source metadata.
 
-HTML note
+### HTML note
 
 During testing with the installed Unstructured build, ordinary HTML passed through the filename= / file-upload path could return an empty element array even though the same valid markup succeeded when processed as HTML text.
 
@@ -358,10 +360,12 @@ A structured HTML test case succeeded under both tested parser paths.
 This behavior is documented here rather than hidden because it is version/parser-specific and should be accounted for if arbitrary web HTML is introduced into the production corpus. A small normalization/text-input fallback is the appropriate next hardening step if arbitrary HTML ingestion is required.
 
 ## AnythingLLM Stack
+
 Configuration
 
-Representative .env.example values:
+Representative `.env.example` values:
 
+```
 ANYTHINGLLM_PORT=3001
 
 VAULT_HOST_PATH=/absolute/path/to/vault/corporate
@@ -380,52 +384,61 @@ VECTOR_DB=lancedb
 
 SIG_KEY=generate-with-openssl-rand-hex-32
 SIG_SALT=generate-with-openssl-rand-hex-32
+```
 
 Signing secrets are generated using:
 
-openssl rand -hex 32
+`openssl rand -hex 32`
 
-Actual secrets are stored only in .env.
+Actual secrets are stored only in `.env.`
 
 ## AnythingLLM Storage and Vault Access
 
 AnythingLLM application state is persisted to:
 
-~/anythingllm-stack/data/
+`~/anythingllm-stack/data/`
 
 which is mounted as:
 
-/app/server/storage
+`/app/server/storage`
 
 This preserves:
 
-application configuration
-workspaces
-SQLite state
-LanceDB data
-embedded documents / vector state
+- application configuration
+
+- workspaces
+
+- SQLite state
+
+- LanceDB data
+
+- embedded documents / vector state
 
 Persistence was verified by creating the Corporate Test workspace, running:
 
+```
 docker compose down
 docker compose up -d
+```
 
 and confirming that the workspace remained present.
 
 The corporate vault is mounted separately and read-only:
 
-- "${VAULT_HOST_PATH}:/vault/corporate:ro"
+- `"${VAULT_HOST_PATH}:/vault/corporate:ro"`
 
 Read access was verified by inspecting processed documents from inside the AnythingLLM container.
 
 Write isolation was verified with:
 
+```
 docker compose exec anythingllm \
   touch /vault/corporate/anythingllm-write-test
+```
 
 Expected result:
 
-Read-only file system
+`Read-only file system`
 
 This failure is intentional and confirms the required access boundary.
 
@@ -433,12 +446,14 @@ This failure is intentional and confirms the required access boundary.
 
 Generation is configured through AnythingLLM's Generic OpenAI provider:
 
+```
 LLM_PROVIDER=generic-openai
 GENERIC_OPEN_AI_BASE_PATH=http://host.docker.internal:8000/v1
+```
 
 The target model name is supplied through:
 
-GENERIC_OPEN_AI_MODEL_PREF
+`GENERIC_OPEN_AI_MODEL_PREF`
 
 and is therefore not hardcoded into Compose.
 
@@ -450,8 +465,10 @@ The supplied large model was not recreated locally because the assessment define
 
 Embeddings are deliberately independent from the generation endpoint:
 
+```
 EMBEDDING_ENGINE=native
 EMBEDDING_MODEL_PREF=Xenova/all-MiniLM-L6-v2
+```
 
 The embedding workload therefore runs locally on CPU.
 
@@ -459,7 +476,7 @@ The supplied GPU-backed OpenAI-compatible model is not used for embeddings.
 
 Vector storage uses:
 
-VECTOR_DB=lancedb
+`VECTOR_DB=lancedb`
 
 This keeps the deployment self-contained and avoids introducing an additional vector-database service.
 

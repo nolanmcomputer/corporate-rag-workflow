@@ -149,9 +149,7 @@ and the Unstructured API was reachable over the shared network.
 
 ## Unstructured Stack
 
-Configuration
-
-Example .env.example:
+Configuration Example `.env.example`:
 
 ```
 VAULT_HOST_PATH=/absolute/path/to/vault/corporate
@@ -161,8 +159,10 @@ SHARED_NETWORK_NAME=existing-network-name
 
 The corporate subtree is mounted read/write:
 
+```
 volumes:
-  - "${VAULT_HOST_PATH}:/vault/corporate"
+  "${VAULT_HOST_PATH}:/vault/corporate"
+```
 
 The parent /vault directory is never mounted.
 
@@ -211,9 +211,10 @@ Processed output is written to:
 
 A repeatable preprocessing command is provided:
 
-`cd ~/unstructured-stack`
-
-`./preprocess.sh <filename>`
+```
+cd ~/unstructured-stack
+./preprocess.sh <filename>
+```
 
 Example:
 
@@ -285,39 +286,49 @@ A multi-section Project Bingo PDF of several thousand characters was used to ver
 
 Chunk count:
 
-> jq 'length' \
->  "${VAULT_HOST_PATH}/processed/larger-test.chunks.json"
+```
+jq 'length' \
+"${VAULT_HOST_PATH}/processed/larger-test.chunks.json"
+```
 
 Maximum generated chunk size:
 
-> jq '[.[].text | length] | max' \
->  "${VAULT_HOST_PATH}/processed/larger-test.chunks.json"
+```
+jq '[.[].text | length] | max' \
+"${VAULT_HOST_PATH}/processed/larger-test.chunks.json"
+```
 
 The maximum was verified not to exceed the configured 1,200-character hard limit.
 
 Metadata can be inspected with:
 
-> jq -r '
->  .[] |
->  [
->    .type,
->    (.metadata.filename // "n/a"),
->    (.metadata.page_number // "n/a"),
->    (.metadata.filetype // "n/a"),
->    (.text | length)
->  ] |
->  @tsv
->' "${VAULT_HOST_PATH}/processed/larger-test.chunks.json"
+```
+ jq -r '
+  .[] |
+  [
+    .type,
+    (.metadata.filename // "n/a"),
+    (.metadata.page_number // "n/a"),
+    (.metadata.filetype // "n/a"),
+    (.text | length)
+  ] |
+  @tsv
+' "${VAULT_HOST_PATH}/processed/larger-test.chunks.json"
+```
 
 ## Metadata / Provenance
 
 Processed elements retain provenance where available, including:
 
-source filename
-page number
-file type
-element type
-original contributing elements
+- source filename
+
+- page number
+
+- file type
+
+- element type
+
+- original contributing elements
 
 Example structure:
 
@@ -425,7 +436,7 @@ and confirming that the workspace remained present.
 
 The corporate vault is mounted separately and read-only:
 
-- `"${VAULT_HOST_PATH}:/vault/corporate:ro"`
+`"${VAULT_HOST_PATH}:/vault/corporate:ro"`
 
 Read access was verified by inspecting processed documents from inside the AnythingLLM container.
 
@@ -457,7 +468,7 @@ The target model name is supplied through:
 
 and is therefore not hardcoded into Compose.
 
-host.docker.internal is explicitly mapped using Docker's host-gateway mechanism so the AnythingLLM container can address the host-provided service.
+`host.docker.internal` is explicitly mapped using Docker's host-gateway mechanism so the AnythingLLM container can address the host-provided service.
 
 The supplied large model was not recreated locally because the assessment defines it as an existing target-environment dependency.
 
@@ -484,18 +495,18 @@ This keeps the deployment self-contained and avoids introducing an additional ve
 
 A persistent AnythingLLM workspace named:
 
-Corporate Test
+`Corporate Test`
 
 with slug:
 
-corporate-test
+`corporate-test`
 
 was used for RAG verification.
 
 A small Project Bingo document containing:
 
-Project Bingo begins on September 2.
-Project Manager: Bob Doe.
+> Project Bingo begins on September 2.
+> Project Manager: Bob Doe.
 
 was embedded using the native MiniLM provider.
 
@@ -503,19 +514,22 @@ Semantic retrieval was then tested independently of the missing generation LLM.
 
 Example query:
 
-Who is responsible for Project Bingo?
+> Who is responsible for Project Bingo?
 
 The highest-ranked retrieved content contained:
 
-Project Manager: Bob Doe.
+> Project Manager: Bob Doe.
 
 This demonstrates semantic matching rather than exact string matching: the query uses "responsible for" while the source uses "Project Manager."
 
-Vector retrieval succeeded while the external generation service at port 8000 was unavailable, independently demonstrating:
+Vector retrieval succeeded while the external generation service at `port 8000` was unavailable, independently demonstrating:
 
 Native CPU embedding  -> working
+
 LanceDB storage       -> working
+
 Semantic retrieval    -> working
+
 Generation dependency -> separate
 
 ## Developer API
@@ -526,19 +540,23 @@ An API key can be generated through the AnythingLLM Developer API settings page.
 
 Authentication can be verified with:
 
+```
 curl -sS \
   http://localhost:3001/api/v1/auth \
   -H "Authorization: Bearer ${ANYTHINGLLM_API_KEY}"
+```
 
 Expected result:
 
+```
 {
   "authenticated": true
 }
+```
 
 Semantic vector search was tested using:
 
-POST /api/v1/workspace/corporate-test/vector-search
+`POST /api/v1/workspace/corporate-test/vector-search`
 
 with Bearer authentication.
 
@@ -546,42 +564,49 @@ This verifies that a future internal service can reach an authenticated workspac
 
 The intended production flow is:
 
-Internal service
-      |
-      | authenticated HTTP
-      v
-AnythingLLM workspace
-      |
-      +--> native embedding / LanceDB retrieval
-      |
-      +--> supplied OpenAI-compatible generation endpoint
+	Internal service
+	      |
+	      | authenticated HTTP
+	      v
+	AnythingLLM workspace
+	      |
+	      +--> native embedding / LanceDB retrieval
+	      |
+	      +--> supplied OpenAI-compatible generation endpoint
+	      
 ## AnythingLLM Direct-Ingestion Tests
 
 A separate workspace was created for direct-ingestion testing:
 
-direct-ingestion-test
+`direct-ingestion-test`
 
 The objective was to determine which formats AnythingLLM can consume usefully without first passing through Unstructured.
 
 Testing should be judged by all three stages:
 
-upload accepted
-embedding succeeds
-extracted content is semantically retrievable
-Test results
+- upload accepted
+
+- embedding succeeds
+
+- extracted content is semantically retrievable
+
+- Test results
 
 TODO before submission: Replace this table with the actual recorded results from the direct-ingestion tests.
 
+```
 Format	Upload	Embedded	Semantic retrieval	Recommendation
 PDF	TODO	TODO	TODO	TODO
 DOCX	TODO	TODO	TODO	TODO
 PPTX	TODO	TODO	TODO	TODO
 HTML	TODO	TODO	TODO	TODO
+```
 
 Even where direct ingestion succeeds, the Unstructured path remains useful when deterministic chunking, normalized output, and explicit provenance metadata are required.
 
 The preferred controlled path for corporate ingestion is therefore:
 
+```
 raw source
    ↓
 Unstructured
@@ -589,90 +614,132 @@ Unstructured
 normalized + metadata-preserving chunks
    ↓
 AnythingLLM
+```
 
 rather than relying exclusively on format-specific behavior inside the downstream application.
 
 ## Deployment
+
+```
 Unstructured
 cd ~/unstructured-stack
+```
 
+```
 cp .env.example .env
+```
+
 **Edit deployment-specific values.**
 
+```
 docker compose up -d
 docker compose ps
+```
 
 Run preprocessing:
 
+```
 ./preprocess.sh <filename>
+```
 AnythingLLM
-cd ~/anythingllm-stack
 
+```
+cd ~/anythingllm-stack
 cp .env.example .env
+```
 **Edit deployment-specific values and generate secrets.**
 
+```
 docker compose up -d
 docker compose ps
+```
 
 AnythingLLM UI:
 
+```
 http://localhost:3001
+```
 
 Unstructured host API:
 
+```
 http://localhost:8001/general/v0/general
+```
 
 ## Health / Verification Checks
 
 Containers
+
+```
 cd ~/unstructured-stack
 docker compose ps
+```
 
+```
 cd ~/anythingllm-stack
 docker compose ps
+```
 
 AnythingLLM should report healthy.
 
 Shared network
+
+```
 docker network inspect "${SHARED_NETWORK_NAME}" \
   --format '{{range .Containers}}{{println .Name .IPv4Address}}{{end}}'
+```
 
 Both containers should be present.
 
 Unstructured API
+
+```
 curl -i http://localhost:8001/general/v0/general
+```
 
 Expected GET response:
 
-405 Method Not Allowed
+`405 Method Not Allowed`
+
 Inter-container connectivity
 
 From AnythingLLM:
 
-docker compose exec anythingllm getent hosts unstructured
+`docker compose exec anythingllm getent hosts unstructured`
 
 and:
 
+```
 docker compose exec anythingllm \
   curl -i http://unstructured:8000/general/v0/general
+```
+
 Vault isolation
 
 Unstructured should be able to write beneath /vault/corporate.
 
 AnythingLLM should fail:
 
+```
 docker compose exec anythingllm \
   touch /vault/corporate/write-test
+```
 
 with:
-
+```
 Read-only file system
+```
+
 Generation / embedding separation
+
+```
 docker compose exec anythingllm env | \
   grep -E 'LLM_PROVIDER|GENERIC_OPEN_AI|EMBEDDING_ENGINE|EMBEDDING_MODEL|VECTOR_DB'
+```
 
 Expected configuration includes:
 
+```
 LLM_PROVIDER=generic-openai
 GENERIC_OPEN_AI_BASE_PATH=http://host.docker.internal:8000/v1
 
@@ -680,6 +747,8 @@ EMBEDDING_ENGINE=native
 EMBEDDING_MODEL_PREF=Xenova/all-MiniLM-L6-v2
 
 VECTOR_DB=lancedb
+```
+
 ## Verification Checklist
 
 The following were verified during implementation:
@@ -756,7 +825,7 @@ AnythingLLM's access is additionally read-only.
 
 Secrets are not embedded in docker-compose.yml.
 
-Local .env files should not be committed.
+Local `.env` files should not be committed.
 
 Production API keys and AnythingLLM signing values should be generated or injected specifically for the target host.
 
@@ -766,19 +835,29 @@ Semantic embedding and vector retrieval were verified independently of the gener
 The tested Unstructured build exhibited differing HTML behavior between normal file-based input and its text/document-oriented parser paths. Structured HTML was successfully processed. Arbitrary HTML ingestion should receive a small normalization/text-input fallback if that behavior remains present in the target image.
 The current preprocessing workflow is intentionally explicit rather than a filesystem watcher. Documents are processed one at a time through preprocess.sh, reducing accidental access or ingestion outside the intended corporate source path.
 Chunking parameters are deliberately conservative defaults for this assessment and should be tuned against real corporate documents if document size, structure, or retrieval characteristics differ significantly.
-Summary
+
+## Summary
 
 The deployment establishes a self-hosted document-to-RAG pipeline with:
 
-scoped filesystem access
-independent Docker Compose stacks
-external shared networking
-document normalization and explicit chunking
-retained source provenance
-persistent AnythingLLM state
-CPU-native embeddings
-local vector retrieval
-a separately configured GPU generation service
-an authenticated API surface for future internal integration
+- scoped filesystem access
+
+- independent Docker Compose stacks
+
+- external shared networking
+
+- document normalization and explicit chunking
+
+- retained source provenance
+
+- persistent AnythingLLM state
+
+- CPU-native embeddings
+
+- local vector retrieval
+
+- a separately configured GPU generation service
+
+- an authenticated API surface for future internal integration
 
 The implementation intentionally keeps generation, embeddings, document preprocessing, persistent application state, and host corporate storage as separate concerns so that each can be deployed, tested, and replaced independently.

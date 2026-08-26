@@ -1,6 +1,6 @@
 services:
   unstructured:
-    image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
+    image: downloads.unstructured.io/unstructured-io/unstructured-api@sha256:0df934a22e4e893cf15e7aeaf35c463ecc75937758a83099aefdc13041619a1d
     
     ports:
       - "${UNSTRUCTURED_PORT}:8000"

@@ -772,6 +772,7 @@ EMBEDDING_MODEL_PREF=Xenova/all-MiniLM-L6-v2
 
 VECTOR_DB=lancedb
 ```
+Container images are pinned to the image digests used during development and verification rather than tracking `latest`. This prevents upstream tag changes from altering the tested deployment
 
 ## Verification Checklist
 

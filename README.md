@@ -419,12 +419,7 @@ Direct ingestion is therefore supported for the tested formats, but the Unstruct
 ```bash
 cd ~/unstructured-stack
 cp .env.example .env
-# Edit deployment-specific values.
-```
-
-For local testing, `VAULT_HOST_PATH` may point to the included `test-vault/corporate` fixture. In the target environment, set it to the existing corporate vault path instead.
-
-```bash
+# Edit deployment-specific values. For local testing, `VAULT_HOST_PATH` may point to the included `test-vault/corporate` fixture. In the target environment, set it to the existing corporate vault path instead.
 docker compose up -d
 docker compose ps
 ```

@@ -127,6 +127,19 @@ Its host path is supplied through `VAULT_HOST_PATH`; neither Compose file hardco
 
 The Unstructured API does not require persistent application state. `~/unstructured-stack/data/` is retained to match the requested layout and can be used as a local test fixture by pointing `VAULT_HOST_PATH` to it. Persistent preprocessing artifacts remain in the host corporate vault.
 
+### Local Test Vault
+
+The repository includes a small synthetic test fixture under:
+
+```
+test-vault/
+└── corporate/
+    ├── raw/
+    └── processed/
+```
+
+The files under `test-vault/` contain only synthetic "Project Bingo" data used during local preprocessing, ingestion, and retrieval verification. `test-vault/` is not required in the target deployment. In the supplied target environment, `VAULT_HOST_PATH` should point to the existing corporate vault directory on the host.
+
 ## Configuration
 
 ### Shared Docker Network
@@ -245,7 +258,7 @@ The preprocessing pipeline uses title-aware chunking:
 
 Generated `CompositeElement` chunks retain source filename, page number, file type, and contributing original elements through `include_orig_elements=true`.
 
-A multi-section Project Bingo PDF was used to verify that the policy produces multiple chunks. The maximum chunk length was checked with:
+A multi-section "Project Bingo" PDF was used to verify that the policy produces multiple chunks. The maximum chunk length was checked with:
 
 ```bash
 jq '[.[].text | length] | max' \
@@ -407,6 +420,11 @@ Direct ingestion is therefore supported for the tested formats, but the Unstruct
 cd ~/unstructured-stack
 cp .env.example .env
 # Edit deployment-specific values.
+```
+
+For local testing, `VAULT_HOST_PATH` may point to the included `test-vault/corporate` fixture. In the target environment, set it to the existing corporate vault path instead.
+
+```bash
 docker compose up -d
 docker compose ps
 ```

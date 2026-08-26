@@ -107,7 +107,7 @@ The host corporate vault uses:
 └── processed/
 ```
 
-In the local assessment environment the actual host path is supplied through VAULT_HOST_PATH; neither Compose file hardcodes the host vault location.
+In the local assessment environment the actual host path is supplied through `VAULT_HOST_PATH`; neither Compose file hardcodes the host vault location.
 
 ## Shared Docker Network
 
@@ -592,30 +592,54 @@ Testing should be judged by all three stages:
 
 - Test results
 
-TODO before submission: Replace this table with the actual recorded results from the direct-ingestion tests.
+## AnythingLLM Direct-Ingestion Tests
+
+A separate AnythingLLM workspace, `direct-ingestion-test`, was used to verify which source formats could be uploaded, embedded, and retrieved successfully without first passing through the Unstructured preprocessing stack.
+
+| Format | Upload | Embedded | Semantic Retrieval | Recommendation |
+|---|---:|---:|---:|---|
+| PDF | PASS | PASS | PASS | Direct ingestion is supported. Use Unstructured when controlled chunking and explicit page/source metadata are preferred. |
+| DOCX | PASS | PASS | PASS | Direct ingestion is supported. Unstructured remains preferable when normalized, metadata-preserving preprocessing is desired. |
+| PPTX | PASS | PASS | PASS | Direct ingestion is supported. Unstructured is preferable where slide/page provenance and consistent chunking are important. |
+| HTML | PASS* | PASS* | PASS* | Direct ingestion generally works, but a minor HTML parsing/extraction limitation was observed during testing. Prefer preprocessing when predictable HTML normalization is required. |
+
+### Direct-Ingestion Findings
+
+PDF, DOCX, and PPTX were successfully uploaded to AnythingLLM, embedded using the configured native CPU embedding model, and retrieved through semantic vector search without first passing through Unstructured.
+
+HTML was also ingestible, but a minor parsing/extraction inconsistency was observed during testing. Because of this, HTML is better treated as a preprocessing candidate when predictable content normalization is required.
+
+Successful direct ingestion does not eliminate the purpose of the Unstructured preprocessing path. The preprocessing stack provides a controlled, format-independent point at which to apply:
+
+- explicit chunk sizing
+
+- title-aware chunk boundaries
+
+- normalized structured output
+
+- source filename preservation
+
+- page or section provenance where available
+
+- consistent downstream RAG preparation.
+
+For controlled corporate ingestion, the preferred path remains:
 
 ```
-Format	Upload	Embedded	Semantic retrieval	Recommendation
-PDF	TODO	TODO	TODO	TODO
-DOCX	TODO	TODO	TODO	TODO
-PPTX	TODO	TODO	TODO	TODO
-HTML	TODO	TODO	TODO	TODO
+	Raw document
+	     |
+	     v
+	Unstructured preprocessing
+	     |
+	     v
+	Normalized, metadata-preserving chunks
+	     |
+	     v
+	AnythingLLM
+	     |
+	     v
+	Native CPU embeddings + LanceDB retrieval
 ```
-
-Even where direct ingestion succeeds, the Unstructured path remains useful when deterministic chunking, normalized output, and explicit provenance metadata are required.
-
-The preferred controlled path for corporate ingestion is therefore:
-
-```
-raw source
-   ↓
-Unstructured
-   ↓
-normalized + metadata-preserving chunks
-   ↓
-AnythingLLM
-```
-
 rather than relying exclusively on format-specific behavior inside the downstream application.
 
 ## Deployment
@@ -783,8 +807,6 @@ Developer API authentication
 Semantic retrieval verified without generation model
 Inter-container DNS / shared-network communication
 Full stop/start deployment rehearsal
-Direct-ingestion test table finalized with recorded results
-Arbitrary HTML file-input fallback, if required beyond the tested structured HTML path
 ```
 
 ## Security Notes

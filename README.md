@@ -1,4 +1,4 @@
-# Self-Hosted Corporate Knowledge Base
+# Local RAG Infrastructure Deployment
 
 This project deploys two independent Docker Compose stacks for a self-hosted corporate RAG workflow:
 

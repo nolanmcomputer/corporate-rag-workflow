@@ -1,4 +1,6 @@
-# Local RAG Infrastructure Deployment
+# Corporate RAG Workflow
+
+A containerized retrieval-augmented generation workflow for ingesting, parsing, chunking, indexing, and querying common enterprise document formats. The project evaluates direct ingestion and document-processing workflows using AnythingLLM and Unstructured, with an emphasis on reproducible deployment and practical enterprise document handling.
 
 This project deploys two independent Docker Compose stacks for a self-hosted corporate RAG workflow:
 
@@ -74,7 +76,7 @@ AnythingLLM mounts the same scoped `/vault/corporate` subtree read-only; Unstruc
 
 ## Target Environment and Layout
 
-The deployment assumes the assessment environment already provides:
+The deployment assumes the environment already provides:
 
 - Windows 11 with WSL2 and Docker Desktop
 - Ubuntu 26.04 LTS guest environment
@@ -147,7 +149,7 @@ The files under `test-vault/` contain only synthetic "Project Bingo" data used d
 Both stacks use the same pre-existing external Docker network. For local testing I created:
 
 ```bash
-docker network create situate-ai
+docker network create network-ai
 ```
 
 The actual network name is supplied through `SHARED_NETWORK_NAME`:
@@ -320,7 +322,7 @@ Create an AnythingLLM workspace:
 - **Name:** `Corporate Test`
 - **Slug:** `corporate-test`
 
-This workspace name keeps assessment/test ingestion isolated; production naming can follow the target environment's internal convention.
+This workspace name keeps ingestion isolated; production naming can follow the target environment's internal convention.
 
 Generate a Developer API key from AnythingLLM settings and export it as `ANYTHINGLLM_API_KEY`, then verify authentication:
 
@@ -391,7 +393,7 @@ The verified workspace chat endpoint is:
 
 `POST http://anythingllm:3001/api/v1/workspace/corporate-test/chat`
 
-Requests use the Developer API key as a Bearer token. Full generation was not exercised locally because the assessment-supplied OpenAI-compatible service was not present in the development environment.
+Requests use the Developer API key as a Bearer token. Full generation was not exercised locally because the OpenAI-compatible service was not present in the development environment.
 
 ### MCP
 
